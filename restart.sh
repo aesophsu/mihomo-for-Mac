@@ -41,16 +41,16 @@ Server_Dir=$(cd $(dirname "${BASH_SOURCE[0]}") && pwd)
 Conf_Dir="$Server_Dir/conf"
 Log_Dir="$Server_Dir/logs"
 
-## 关闭clash服务
+## 关闭mihomo服务
 Text1="服务关闭成功！"
 Text2="服务关闭失败！"
 # 查询并关闭程序进程
-PID_NUM=`ps -ef | grep [c]lash-linux-a | wc -l`
-PID=`ps -ef | grep [c]lash-linux-a | awk '{print $2}'`
+PID_NUM=`ps -ef | grep [m]ihomo-linux-a | wc -l`
+PID=`ps -ef | grep [m]ihomo-linux-a | awk '{print $2}'`
 if [ $PID_NUM -ne 0 ]; then
 	kill -9 $PID
   ReturnStatus=$?
-	# ps -ef | grep [c]lash-linux-a | awk '{print $2}' | xargs kill -9
+	# ps -ef | grep [m]ihomo-linux-a | awk '{print $2}' | xargs kill -9
 fi
 if_success $Text1 $Text2 $ReturnStatus
 
@@ -68,19 +68,19 @@ else
 	exit 1
 fi
 
-## 重启启动clash服务
+## 重启启动mihomo服务
 Text5="服务启动成功！"
 Text6="服务启动失败！"
 if [[ $CpuArch =~ "x86_64" ]]; then
-	nohup $Server_Dir/bin/clash-linux-amd64 -d $Conf_Dir &> $Log_Dir/clash.log &
+	nohup $Server_Dir/bin/mihomo-linux-amd64 -d $Conf_Dir &> $Log_Dir/mihomo.log &
 	ReturnStatus=$?
 	if_success $Text5 $Text6 $ReturnStatus
 elif [[ $CpuArch =~ "aarch64" ||  $CpuArch =~ "arm64" ]]; then
-	nohup $Server_Dir/bin/clash-linux-arm64 -d $Conf_Dir &> $Log_Dir/clash.log &
+	nohup $Server_Dir/bin/mihomo-linux-arm64 -d $Conf_Dir &> $Log_Dir/mihomo.log &
 	ReturnStatus=$?
 	if_success $Text5 $Text6 $ReturnStatus
 elif [[ $CpuArch =~ "armv7" ]]; then
-	nohup $Server_Dir/bin/clash-linux-armv7 -d $Conf_Dir &> $Log_Dir/clash.log &
+	nohup $Server_Dir/bin/mihomo-linux-armv7 -d $Conf_Dir &> $Log_Dir/mihomo.log &
 	ReturnStatus=$?
 	if_success $Text5 $Text6 $ReturnStatus
 else
