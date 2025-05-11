@@ -12,7 +12,7 @@ source "$Server_Dir/.env"
 Conf_Dir="$Server_Dir/conf"
 Temp_Dir="$Server_Dir/temp"
 Log_Dir="$Server_Dir/logs"
-Dashboard_Dir="dashboard/public" # 相对于 $Conf_Dir
+Dashboard_Dir="$Server_Dir/dashboard/public" # 设置为 $Server_Dir/dashboard/public
 
 # 将 CLASH_URL 变量的值赋给 URL 变量，并检查 CLASH_URL 是否为空
 URL=${CLASH_URL:?Error: CLASH_URL variable is not set or empty}
@@ -62,7 +62,7 @@ download_config_file() {
 #################### 脚本初始化后检查 ####################
 
 # 创建必要的目录，如果不存在
-mkdir -p "$Conf_Dir" "$Temp_Dir" "$Log_Dir" "$Conf_Dir/$Dashboard_Dir"
+mkdir -p "$Conf_Dir" "$Temp_Dir" "$Log_Dir" "$Dashboard_Dir" # 修改这里
 
 # 给二进制启动程序、脚本等添加可执行权限
 find "$Server_Dir/bin" -type f -exec chmod +x {} \;
@@ -105,7 +105,7 @@ action "合并配置文件" sh -c "cat \"$Temp_Dir/templete_config.yaml\" > \"$T
 action "复制最终配置文件" cp "$Temp_Dir/config.yaml" "$Conf_Dir/"
 
 # Configure Mihomo Dashboard
-action "配置Dashboard路径" sed -i "" "/^#\?external-ui: /s#.*#external-ui: $Dashboard_Dir#g" "$Conf_Dir/config.yaml"
+action "配置Dashboard路径" sed -i "" "/^#\?external-ui: /s#.*#external-ui: $Dashboard_Dir#g" "$Conf_Dir/config.yaml" # 修改这里
 action "配置API Secret" sed -i "" "/^secret: /s#\(secret: \).*#\1${Secret}#g" "$Conf_Dir/config.yaml"
 
 ## 启动Mihomo服务
@@ -117,7 +117,7 @@ fi
 
 # Output Dashboard access address and Secret
 echo ""
-echo -e "Mihomo Dashboard 访问地址: http://127.0.0.1:9090/ui"
+echo -e "Mihomo Dashboard 访问地址: http://<ip>:9090/ui"
 echo -e "Secret: ${Secret}"
 echo ""
 
