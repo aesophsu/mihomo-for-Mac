@@ -129,11 +129,11 @@ if_success $Text3 $Text4 $ReturnStatus
 
 
 ## 判断订阅内容是否符合mihomo配置文件标准，尝试转换（当前不支持对 x86_64 以外的CPU架构服务器进行mihomo配置文件检测和转换，此功能将在后续添加）
-if [[ $CpuArch =~ "x86_64" || $CpuArch =~ "amd64"  ]]; then
-	echo -e '\n判断订阅内容是否符合mihomo配置文件标准:'
-	bash $Server_Dir/scripts/mihomo_profile_conversion.sh
-	sleep 3
-fi
+# if [[ $CpuArch =~ "x86_64" || $CpuArch =~ "amd64"  ]]; then
+# 	echo -e '\n判断订阅内容是否符合mihomo配置文件标准:'
+# 	bash $Server_Dir/scripts/mihomo_profile_conversion.sh
+# 	sleep 3
+# fi
 
 
 ## Mihomo 配置文件重新格式化及配置
@@ -157,16 +157,11 @@ sed -r -i '/^secret: /s@(secret: ).*@\1'${Secret}'@g' $Conf_Dir/config.yaml
 echo -e '\n正在启动Mihomo服务...'
 Text5="服务启动成功！"
 Text6="服务启动失败！"
-if [[ $CpuArch =~ "x86_64" || $CpuArch =~ "amd64"  ]]; then
-    # 需要替换为 macOS 对应的可执行文件名，并考虑使用 screen 或 tmux
-	nohup $Server_Dir/bin/mihomo-linux-amd64 -d $Conf_Dir &> $Log_Dir/mihomo.log &
-elif [[ $CpuArch =~ "aarch64" ||  $CpuArch =~ "arm64" ]]; then
-    # 需要替换为 macOS 对应的可执行文件名，并考虑使用 screen 或 tmux
-	nohup $Server_Dir/bin/mihomo-linux-arm64 -d $Conf_Dir &> $Log_Dir/mihomo.log &
-else
-	echo -e "\033[31m\n[ERROR] Unsupported CPU Architecture！\033[0m"
-	exit 1
-fi
+
+# 直接使用 $Server_Dir/bin/mihomo，不再区分 CPU 架构，假设 'mihomo' 是适用于 macOS 的
+$Server_Dir/bin/mihomo -d $Conf_Dir &> $Log_Dir/mihomo.log &
+ReturnStatus=$?
+if_success "$Text5" "$Text6" "$ReturnStatus"
 
 # Output Dashboard access address and Secret
 echo ''
