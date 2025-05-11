@@ -4,6 +4,7 @@
 proxy_on() {
 	export http_proxy=http://127.0.0.1:7890
 	export https_proxy=http://127.0.0.1:7890
+ 	export all_proxy=http://127.0.0.1:7890
 	export no_proxy="127.0.0.1,localhost,$(networksetup -listallrouters | tail -n +2 | awk '{print $1}')"
     	export HTTP_PROXY=http://127.0.0.1:7890
     	export HTTPS_PROXY=http://127.0.0.1:7890
@@ -15,6 +16,7 @@ proxy_on() {
 proxy_off(){
 	unset http_proxy
 	unset https_proxy
+ 	unset all_proxy
 	unset no_proxy
   	unset HTTP_PROXY
 	unset HTTPS_PROXY
