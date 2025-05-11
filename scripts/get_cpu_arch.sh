@@ -1,5 +1,5 @@
 #!/bin/bash
-# 该脚本的作用是获取Linux操作系统上运行的CPU架构信息，并将其输出到标准输出流。
+# 该脚本的作用是获取Mac os系统上运行的CPU架构信息，并将其输出到标准输出流。
 
 function exitWithError {
     local errorMessage="$1"
@@ -7,44 +7,18 @@ function exitWithError {
     exit 1
 }
 
-# Function to get CPU architecture
-function get_cpu_arch {
-    local commands=("$@")
-    for cmd in "${commands[@]}"; do
-        local CpuArch
-        CpuArch=$(command -v $cmd >/dev/null && $cmd 2>/dev/null || type -p $cmd 2>/dev/null)
-        if [[ -n "$CpuArch" ]]; then
-            echo "$CpuArch"
-            return
-        fi
-    done
+# Function to get CPU architecture for macOS
+function get_macos_arch {
+    uname -m
 }
 
-# Check if we are running on a supported Linux distribution
-if [[ -f "/etc/os-release" ]]; then
-    . /etc/os-release
-    case "$ID" in
-        "ubuntu"|"debian"|"linuxmint")
-            # Debian-based distributions
-            CpuArch=$(get_cpu_arch "dpkg-architecture -qDEB_HOST_ARCH_CPU" "dpkg-architecture -qDEB_BUILD_ARCH_CPU" "uname -m")
-            ;;
-        "centos"|"fedora"|"rhel")
-            # Red Hat-based distributions
-            CpuArch=$(get_cpu_arch "uname -m" "arch" "uname")
-            ;;
-        *)
-            # Unsupported Linux distribution
-            CpuArch=$(get_cpu_arch "uname -m" "arch" "uname")
-            if [[ -z "$CpuArch" ]]; then
-                exitWithError "Failed to obtain CPU architecture"
-            fi
-            ;;
-    esac
-elif [[ -f "/etc/redhat-release" ]]; then
-    # Older Red Hat-based distributions
-    CpuArch=$(get_cpu_arch "uname -m" "arch" "uname")
+# Determine the operating system
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    # macOS
+    CpuArch=$(get_macos_arch)
 else
-    exitWithError "Unsupported Linux distribution"
+    exitWithError "Unsupported operating system: $OSTYPE"
 fi
 
 echo "CPU architecture: $CpuArch"
+export CpuArch # Make CpuArch available to the calling script
