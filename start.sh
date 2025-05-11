@@ -148,9 +148,8 @@ cat $Temp_Dir/proxy.txt >> $Temp_Dir/config.yaml
 # Configure Mihomo Dashboard
 Work_Dir=$(cd $(dirname $0); pwd)
 Dashboard_Dir="${Work_Dir}/dashboard/public"
-sed -ri "s@^# external-ui:.*@external-ui: ${Dashboard_Dir}@g" $Conf_Dir/config.yaml
-sed -r -i '/^secret: /s@(secret: ).*@\1'${Secret}'@g' $Conf_Dir/config.yaml
-
+sed -i "" "s@^# external-ui:.*@external-ui: ${Dashboard_Dir}@g" $Conf_Dir/config.yaml
+sed -i "" '/^secret: /s@(secret: ).*@\1'"${Secret}"'@g' $Conf_Dir/config.yaml
 
 ## 启动Mihomo服务
 echo -e '\n正在启动Mihomo服务...'
