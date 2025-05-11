@@ -63,6 +63,11 @@ if_success() {
 		echo -e "$1 \\033[60G[\\033[1;32m  OK  \\033[0;39m]\r"
 	else
 		echo -e "$2 \\033[60G[\\033[1;31mFAILED\\033[0;39m]\r"
+		# 在出错时先尝试运行 Mihomo，然后再退出
+		echo -e '\n尝试在出错后启动 Mihomo 服务...'
+		$Server_Dir/bin/mihomo -d $Conf_Dir &> $Log_Dir/mihomo.log &
+		echo -e "Mihomo Dashboard 访问地址 (可能出错): http://<ip>:9090/ui"
+		echo -e "Secret (可能出错): ${Secret}"
 		exit 1
 	fi
 }
@@ -76,6 +81,11 @@ source $Server_Dir/scripts/get_cpu_arch.sh
 # Check if we obtained CPU architecture
 if [[ -z "$CpuArch" ]]; then
 	echo "Failed to obtain CPU architecture"
+	# 在出错时先尝试运行 Mihomo 服务，然后再退出
+	echo -e '\n尝试在出错后启动 Mihomo 服务...'
+	$Server_Dir/bin/mihomo -d $Conf_Dir &> $Log_Dir/mihomo.log &
+	echo -e "Mihomo Dashboard 访问地址 (可能出错): http://<ip>:9090/ui"
+	echo -e "Secret (可能出错): ${Secret}"
 	exit 1
 fi
 
@@ -107,20 +117,17 @@ Text4="配置文件config.yaml下载失败，退出启动！"
 # 尝试使用curl进行下载
 curl -L -k -sS --retry 5 -m 10 -o $Temp_Dir/mihomo.yaml $URL
 ReturnStatus=$?
+# 直接判断 curl 的结果，如果失败则执行出错后的启动逻辑
 if [ $ReturnStatus -ne 0 ]; then
-	# 如果使用curl下载失败，尝试使用wget进行下载
-	for i in {1..10}
-	do
-		wget -q --no-check-certificate -O $Temp_Dir/mihomo.yaml $URL
-		ReturnStatus=$?
-		if [ $ReturnStatus -eq 0 ]; then
-			break
-		else
-			continue
-		fi
-	done
+	echo -e "$Text4 \\033[60G[\\033[1;31mFAILED\\033[0;39m]\r"
+	echo -e '\n尝试在出错后启动 Mihomo 服务...'
+	$Server_Dir/bin/mihomo -d $Conf_Dir &> $Log_Dir/mihomo.log &
+	echo -e "Mihomo Dashboard 访问地址 (可能出错): http://<ip>:9090/ui"
+	echo -e "Secret (可能出错): ${Secret}"
+	exit 1
+else
+	echo -e "$Text3 \\033[60G[\\033[1;32m  OK  \\033[0;39m]\r"
 fi
-if_success $Text3 $Text4 $ReturnStatus
 
 # 重命名mihomo配置文件
 \cp -a $Temp_Dir/mihomo.yaml $Temp_Dir/mihomo_config.yaml
@@ -135,7 +142,7 @@ if_success $Text3 $Text4 $ReturnStatus
 
 
 ## Mihomo 配置文件重新格式化及配置
-# 取出代理相关配置 
+# 取出代理相关配置
 #sed -n '/^proxies:/,$p' $Temp_Dir/mihomo.yaml > $Temp_Dir/proxy.txt
 sed -n '/^proxies:/,$p' $Temp_Dir/mihomo_config.yaml > $Temp_Dir/proxy.txt
 
@@ -165,8 +172,8 @@ echo -e "Mihomo Dashboard 访问地址: http://<ip>:9090/ui"
 echo -e "Secret: ${Secret}"
 echo ''
 
-# 添加环境变量(root权限)
-## macOS 设置全局环境变量的方式与 Linux 不同。
-echo -e "\n请执行以下命令加载代理控制函数: source $Server_Dir/proxy.sh\n"
-echo -e "请执行以下命令开启系统代理: proxy_on\n"
+#################### 自动设置代理环境变量 ####################
+source $Server_Dir/proxy.sh
+proxy_on
+echo -e "\n系统代理已尝试开启。\n"
 echo -e "若要临时关闭系统代理，请执行: proxy_off\n"
