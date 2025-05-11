@@ -29,10 +29,10 @@ action() {
 if_success() {
   local ReturnStatus=$3
   if [ $ReturnStatus -eq 0 ]; then
-          action "$1" /bin/true
+    success "$1"
   else
-          action "$2" /bin/false
-          exit 1
+    failure "$2"
+    exit 1
   fi
 }
 
