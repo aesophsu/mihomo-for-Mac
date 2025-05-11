@@ -60,13 +60,12 @@ action() {
 if_success() {
 	local ReturnStatus=$3
 	if [ $ReturnStatus -eq 0 ]; then
-		success "$1"
+		echo -e "$1 \\033[60G[\\033[1;32m  OK  \\033[0;39m]\r"
 	else
-		failure "$2"
+		echo -e "$2 \\033[60G[\\033[1;31mFAILED\\033[0;39m]\r"
 		exit 1
 	fi
 }
-
 
 #################### 任务执行 ####################
 
