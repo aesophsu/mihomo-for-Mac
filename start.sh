@@ -45,6 +45,16 @@ action() {
     fi
 }
 
+# 检查端口是否被占用
+check_port_used() {
+    local PORT="$1"
+    if netstat -tuln | grep -q ":$PORT "; then
+        return 1 # 端口被占用
+    else
+        return 0 # 端口未被占用
+    fi
+}
+
 # 获取CPU架构信息
 get_cpu_arch() {
     action "获取CPU架构信息" source "$Server_Dir/scripts/get_cpu_arch.sh"
@@ -88,27 +98,72 @@ configure_dashboard() {
 # 启动 Mihomo 服务
 start_mihomo() {
     echo -e '\n--- 启动 Mihomo 服务 ---'
-    action "启动Mihomo服务" "$Server_Dir/bin/mihomo" -d "$Conf_Dir/config.yaml" &> "$Log_Dir/mihomo.log" &
+
+    # 检查端口是否被占用，这里检查常用的端口
+    if check_port_used 7890 || check_port_used 7891 || check_port_used 7892 || check_port_used 1053; then
+        echo -e "\n错误: Mihomo 启动失败，端口 7890, 7891, 7892 或 1053 被占用。"
+        echo -e "请检查是否有其他程序占用了这些端口，或者修改 Mihomo 的配置文件中的端口设置。\n"
+        return 1
+    fi
+
+    # 尝试启动 Mihomo
+    action "启动Mihomo服务" "$Server_Dir/bin/mihomo" -d "$Conf_Dir" &> "$Log_Dir/mihomo.log" &
     Mihomo_PID=$!
-    echo "Mihomo 服务已在后台启动 (PID: $Mihomo_PID)。"
-    echo "Dashboard 访问地址: http://<ip>:9090/ui"
-    echo "Secret: ${Secret}"
-    echo "若要停止 Mihomo 服务，请执行: kill $Mihomo_PID"
-    return 0
+    sleep 2 # 稍微等待一下，让 Mihomo 有时间初始化
+
+    if is_mihomo_running "$Mihomo_PID"; then
+        echo "Mihomo 服务已在后台启动 (PID: $Mihomo_PID)。"
+        echo "Dashboard 访问地址: http://<ip>:9090/ui"
+        echo "Secret: ${Secret}"
+        echo "若要停止 Mihomo 服务，请执行: kill $Mihomo_PID"
+        return 0
+    else
+        echo -e "\n错误: Mihomo 服务启动失败，请查看日志文件 $Log_Dir/mihomo.log 获取详细信息。\n"
+        echo -e "如果日志中出现 \"operation not permitted\" 相关的错误，"
+        echo -e "可能是由于缺少权限或 TUN 接口配置不正确。\n"
+        echo -e "请确保你有足够的权限运行 Mihomo，并且 TUN 接口已正确配置。\n"
+        return 1
+    fi
 }
+
+# 检查 Mihomo 服务是否正在运行
+is_mihomo_running() {
+    local PID="$1"
+    if [ -n "$PID" ] && kill -0 "$PID" >/dev/null 2>&1; then
+        return 0 # 运行中
+    else
+        return 1 # 未运行
+    fi
+}
+
 
 # Fallback 配置 (这里添加了使用 fallback.yaml 的逻辑)
 fallback_config() {
     echo -e '\n--- Fallback 配置 ---'
     if [ -f "$Conf_Dir/fallback.yaml" ]; then
-        echo "发现 fallback.yaml，使用它来启动 Mihomo。"
-        action "启动Mihomo服务" "$Server_Dir/bin/mihomo" -d "$Conf_Dir/fallback.yaml" &> "$Log_Dir/mihomo.log" &
-        Mihomo_PID=$!
-        echo "Mihomo 服务已在后台启动 (PID: $Mihomo_PID)。"
-        echo "Dashboard 访问地址 (可能使用默认配置): http://<ip>:9090/ui"
-        echo "Secret (可能为空): ${Secret}" #  fallback  可能没有 Secret
-        echo "若要停止 Mihomo 服务，请执行: kill $Mihomo_PID"
-        return 0
+        echo "发现 fallback.yaml，将它复制到 config.yaml 后启动 Mihomo。"
+        action "复制 fallback.yaml 到 config.yaml" cp "$Conf_Dir/fallback.yaml" "$Conf_Dir/config.yaml"
+        if [ $? -eq 0 ]; then
+            action "启动Mihomo服务" "$Server_Dir/bin/mihomo" -d "$Conf_Dir" &> "$Log_Dir/mihomo.log" &
+            Mihomo_PID=$!
+            sleep 2
+             if is_mihomo_running "$Mihomo_PID"; then
+                echo "Mihomo 服务已在后台启动 (PID: $Mihomo_PID)。"
+                echo "Dashboard 访问地址 (可能使用默认配置): http://<ip>:9090/ui"
+                echo "Secret (可能为空): ${Secret}" #  fallback  可能没有 Secret
+                echo "若要停止 Mihomo 服务，请执行: kill $Mihomo_PID"
+                return 0
+             else
+                echo -e "\n错误: Mihomo 服务启动失败，请查看日志文件 $Log_Dir/mihomo.log 获取详细信息。\n"
+                echo -e "如果日志中出现 \"operation not permitted\" 相关的错误，"
+                echo -e "可能是由于缺少权限或 TUN 接口配置不正确。\n"
+                echo -e "请确保你有足够的权限运行 Mihomo，并且 TUN 接口已正确配置。\n"
+                return 1
+             fi
+        else
+            echo "错误: 复制 fallback.yaml 失败。"
+            return 1
+        fi
     else
         echo "错误: 未找到 fallback.yaml，无法执行 Fallback 配置。"
         return 1
