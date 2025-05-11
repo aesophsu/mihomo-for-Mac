@@ -1,8 +1,5 @@
 #!/bin/bash
 
-# 加载系统函数库(Only for RHEL Linux)
-# [ -f /etc/init.d/functions ] && source /etc/init.d/functions
-
 #################### 脚本初始化任务 ####################
 
 # 获取脚本工作目录绝对路径
@@ -161,17 +158,11 @@ echo -e '\n正在启动Mihomo服务...'
 Text5="服务启动成功！"
 Text6="服务启动失败！"
 if [[ $CpuArch =~ "x86_64" || $CpuArch =~ "amd64"  ]]; then
+    # 需要替换为 macOS 对应的可执行文件名，并考虑使用 screen 或 tmux
 	nohup $Server_Dir/bin/mihomo-linux-amd64 -d $Conf_Dir &> $Log_Dir/mihomo.log &
-	ReturnStatus=$?
-	if_success $Text5 $Text6 $ReturnStatus
 elif [[ $CpuArch =~ "aarch64" ||  $CpuArch =~ "arm64" ]]; then
+    # 需要替换为 macOS 对应的可执行文件名，并考虑使用 screen 或 tmux
 	nohup $Server_Dir/bin/mihomo-linux-arm64 -d $Conf_Dir &> $Log_Dir/mihomo.log &
-	ReturnStatus=$?
-	if_success $Text5 $Text6 $ReturnStatus
-elif [[ $CpuArch =~ "armv7" ]]; then
-	nohup $Server_Dir/bin/mihomo-linux-armv7 -d $Conf_Dir &> $Log_Dir/mihomo.log &
-	ReturnStatus=$?
-	if_success $Text5 $Text6 $ReturnStatus
 else
 	echo -e "\033[31m\n[ERROR] Unsupported CPU Architecture！\033[0m"
 	exit 1
@@ -184,6 +175,9 @@ echo -e "Secret: ${Secret}"
 echo ''
 
 # 添加环境变量(root权限)
+## macOS 设置全局环境变量的方式与 Linux 不同。
+## 修改 /etc/profile.d 目录下的脚本可能不会生效。
+## 在 macOS 上，通常建议修改 ~/.bashrc、~/.zshrc (如果使用 Zsh) 或使用 launchctl 来管理服务和环境变量。
 cat>/etc/profile.d/mihomo.sh<<EOF
 # 开启系统代理
 function proxy_on() {
